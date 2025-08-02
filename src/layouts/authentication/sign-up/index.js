@@ -8,13 +8,16 @@
 
 Coded by www.creative-tim.com
 
- =========================================================
+=========================================================
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
 // react-router-dom components
 import { Link } from "react-router-dom";
+
+// react imports
+import React, { useState } from "react";
 
 // @mui material components
 import Card from "@mui/material/Card";
@@ -32,7 +35,31 @@ import CoverLayout from "layouts/authentication/components/CoverLayout";
 // Images
 import bgImage from "assets/images/bg-sign-up-cover.jpeg";
 
+// firebase
+import { firebaseApp, auth } from "firebase-config.js";
+import { createUserWithEmailAndPassword } from "firebase/auth"; // standalone func, nees to be imported spearely
+
+async function createUser(name, email, pwd)  {
+  console.log("Creating user with:");
+  console.log("Name:", name);
+  console.log("Email:", email);
+  console.log("Password:", pwd);
+  console.log("FIREBASE:", firebaseApp.name); // for debugging firebase app
+
+  createUserWithEmailAndPassword(auth, email, pwd)
+  .then(userCred => {
+    console.log("Signed in:", userCred.user);
+  })
+  .catch(error => {
+    console.error("Auth error:", error.message);
+  });
+}
+
 function Cover() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   return (
     <CoverLayout image={bgImage}>
       <Card>
@@ -57,13 +84,37 @@ function Cover() {
         <MDBox pt={4} pb={3} px={3}>
           <MDBox component="form" role="form">
             <MDBox mb={2}>
-              <MDInput type="text" label="Name" variant="standard" fullWidth />
+              <MDInput
+              required
+                type="text"
+                label="Name"
+                variant="standard"
+                fullWidth
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </MDBox>
             <MDBox mb={2}>
-              <MDInput type="email" label="Email" variant="standard" fullWidth />
+              <MDInput
+              required
+                type="email"
+                label="Email"
+                variant="standard"
+                fullWidth
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </MDBox>
             <MDBox mb={2}>
-              <MDInput type="password" label="Password" variant="standard" fullWidth />
+              <MDInput
+                required
+                type="password"
+                label="Password"
+                variant="standard"
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </MDBox>
             <MDBox display="flex" alignItems="center" ml={-1}>
               <Checkbox />
@@ -87,8 +138,13 @@ function Cover() {
               </MDTypography>
             </MDBox>
             <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth>
-                sign in
+              <MDButton
+                variant="gradient"
+                color="info"
+                fullWidth
+                onClick={() => createUser(name, email, password)}
+              >
+                sign Up
               </MDButton>
             </MDBox>
             <MDBox mt={3} mb={1} textAlign="center">
