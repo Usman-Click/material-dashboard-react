@@ -131,7 +131,7 @@ function Cover() {
           city: city,
           ip: ip,
           region: region,
-          countryName: countryName,
+          country_name: countryName,
           timezone: timezone,
           device: {
             model: result.device.model || null,
@@ -147,6 +147,14 @@ function Cover() {
           },
         },
       });
+
+      // Save user data in session storage
+      sessionStorage.setItem("user", JSON.stringify({
+        name: name,
+        email: email,
+        city: city,
+        region: countryName
+      }))
 
       setSuccessOpen(true);
     } catch (error) {

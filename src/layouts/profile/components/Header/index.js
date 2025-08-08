@@ -63,6 +63,9 @@ function Header({ children }) {
   }, [tabsOrientation]);
 
   const handleSetTabValue = (event, newValue) => setTabValue(newValue);
+  
+  const user = JSON.parse(sessionStorage.getItem("user"));
+  
 
   return (
     <MDBox position="relative" mb={5}>
@@ -99,7 +102,7 @@ function Header({ children }) {
           <Grid item>
             <MDBox height="100%" mt={0.5} lineHeight={1}>
               <MDTypography variant="h5" fontWeight="medium">
-                Richard Davis
+                {user != null ? user.name : "Abubakar Muh'd"}
               </MDTypography>
               <MDTypography variant="button" color="text" fontWeight="regular">
                 CEO / Co-Founder
