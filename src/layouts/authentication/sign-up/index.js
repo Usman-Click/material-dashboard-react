@@ -35,24 +35,122 @@ import CoverLayout from "layouts/authentication/components/CoverLayout";
 // Images
 import bgImage from "assets/images/bg-sign-up-cover.jpeg";
 
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+
 // firebase
-import { firebaseApp, auth } from "firebase-config.js";
+import { firebaseApp, auth, db } from "firebase-config.js";
 import { createUserWithEmailAndPassword } from "firebase/auth"; // standalone func, nees to be imported spearely
+import { doc, setDoc } from "firebase/firestore";
 
-async function createUser(name, email, pwd)  {
-  console.log("Creating user with:");
-  console.log("Name:", name);
-  console.log("Email:", email);
-  console.log("Password:", pwd);
-  console.log("FIREBASE:", firebaseApp.name); // for debugging firebase app
+// get device user agent info
+import { UAParser } from "ua-parser-js";
 
-  createUserWithEmailAndPassword(auth, email, pwd)
-  .then(userCred => {
+async function createUser(
+  name,
+  email,
+  pwd,
+  setLoading,
+  setSuccessOpen,
+  setErrorOpen,
+  setErrorMessage
+) {
+  setLoading(true);
+
+  try {
+    // Create user in Firebase Auth
+    const userCred = await createUserWithEmailAndPassword(auth, email, pwd);
     console.log("Signed in:", userCred.user);
-  })
-  .catch(error => {
+
+    // Get devicde info : location, ip
+    var latitude, longitude, city, ip, region, countryName, timezone, device, os, browser;
+
+    try {
+      // Get location
+      const res = await fetch("https://ipapi.co/json");
+      const data = await res.json();
+      city = data.city;
+      ip = data.ip;
+      latitude = data.latitude;
+      longitude = data.longitude;
+      countryName = data.country_name;
+      timezone = data.timezone;
+      region = data.region;
+
+      console.log("City:", data.city);
+      console.log("Lat:", data.latitude);
+      console.log("Long:", data.longitude);
+    } catch (err) {
+      // if failed, eg due to nextwork timeout, then fallback to built-in geolocator
+      console.error("IP Fallback Error:", err);
+      if (navigator.geolocation) {
+        // try build-in geolocator
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            latitude = position.coords.latitude;
+            longitude = position.coords.longitude;
+            console.log("Lat:", latitude, "Lng:", longitude);
+          },
+          async (error) => {
+            console.error("Geo error:", error);
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      }
+    }
+
+    // 2. Parse device user agent detaiuls using parser
+    const parser = new UAParser();
+    const result = parser.getResult();
+
+    device = result.device;
+    os = result.os;
+    browser = result.browser;
+
+    console.log("Device:", device);
+    console.log("OS:", result);
+    console.log("Browser:", result);
+
+    // 3. save user's data in Firestore document with UID as ID
+    await setDoc(doc(db, "users", userCred.user.uid), {
+      name: name,
+      email: email,
+      createdAt: new Date(),
+      metadata: {
+        latitude: latitude,
+        longitude: longitude,
+        city: city,
+        ip: ip,
+        region: region,
+        countryName: countryName,
+        timezone: timezone,
+        device: {
+          model: result.device.model || null,
+          type: result.device.type || null,
+        },
+        os: {
+          name: result.os.name || null,
+          version: result.os.version || null,
+        },
+        browser: {
+          name: result.browser.name || null,
+          version: result.browser.version || null,
+        },
+      },
+    });
+
+    setSuccessOpen(true);
+  } catch (error) {
     console.error("Auth error:", error.message);
-  });
+    setErrorMessage(error.message);
+    setErrorOpen(true);
+  } finally {
+    setLoading(false);
+  }
 }
 
 function Cover() {
@@ -60,8 +158,33 @@ function Cover() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [loading, setLoading] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [errorOpen, setErrorOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   return (
     <CoverLayout image={bgImage}>
+      <Dialog open={successOpen} onClose={() => setSuccessOpen(false)}>
+        <DialogTitle>Success</DialogTitle>
+        <DialogContent>Account created successfully!</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSuccessOpen(false)} autoFocus>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={errorOpen} onClose={() => setErrorOpen(false)}>
+        <DialogTitle>Error</DialogTitle>
+        <DialogContent>{errorMessage || "An error occurred while signing up."}</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setErrorOpen(false)} autoFocus>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Card>
         <MDBox
           variant="gradient"
@@ -82,10 +205,25 @@ function Cover() {
           </MDTypography>
         </MDBox>
         <MDBox pt={4} pb={3} px={3}>
-          <MDBox component="form" role="form">
+          <MDBox
+            component="form"
+            role="form"
+            onSubmit={(e) => {
+              e.preventDefault(); // stop page reload
+              createUser(
+                name,
+                email,
+                password,
+                setLoading,
+                setSuccessOpen,
+                setErrorOpen,
+                setErrorMessage
+              );
+            }}
+          >
             <MDBox mb={2}>
               <MDInput
-              required
+                required
                 type="text"
                 label="Name"
                 variant="standard"
@@ -96,7 +234,7 @@ function Cover() {
             </MDBox>
             <MDBox mb={2}>
               <MDInput
-              required
+                required
                 type="email"
                 label="Email"
                 variant="standard"
@@ -142,9 +280,10 @@ function Cover() {
                 variant="gradient"
                 color="info"
                 fullWidth
-                onClick={() => createUser(name, email, password)}
+                type="submit" // important
+                disabled={loading}
               >
-                sign Up
+                {loading ? <CircularProgress size={24} color="inherit" /> : "Sign Up"}
               </MDButton>
             </MDBox>
             <MDBox mt={3} mb={1} textAlign="center">
