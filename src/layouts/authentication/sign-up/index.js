@@ -14,10 +14,11 @@ Coded by www.creative-tim.com
 */
 
 // react-router-dom components
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 // react imports
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ⬅ Import navigate hook
 
 // @mui material components
 import Card from "@mui/material/Card";
@@ -50,109 +51,6 @@ import { doc, setDoc } from "firebase/firestore";
 // get device user agent info
 import { UAParser } from "ua-parser-js";
 
-async function createUser(
-  name,
-  email,
-  pwd,
-  setLoading,
-  setSuccessOpen,
-  setErrorOpen,
-  setErrorMessage
-) {
-  setLoading(true);
-
-  try {
-    // Create user in Firebase Auth
-    const userCred = await createUserWithEmailAndPassword(auth, email, pwd);
-    console.log("Signed in:", userCred.user);
-
-    // Get devicde info : location, ip
-    var latitude, longitude, city, ip, region, countryName, timezone, device, os, browser;
-
-    try {
-      // Get location
-      const res = await fetch("https://ipapi.co/json");
-      const data = await res.json();
-      city = data.city;
-      ip = data.ip;
-      latitude = data.latitude;
-      longitude = data.longitude;
-      countryName = data.country_name;
-      timezone = data.timezone;
-      region = data.region;
-
-      console.log("City:", data.city);
-      console.log("Lat:", data.latitude);
-      console.log("Long:", data.longitude);
-    } catch (err) {
-      // if failed, eg due to nextwork timeout, then fallback to built-in geolocator
-      console.error("IP Fallback Error:", err);
-      if (navigator.geolocation) {
-        // try build-in geolocator
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            latitude = position.coords.latitude;
-            longitude = position.coords.longitude;
-            console.log("Lat:", latitude, "Lng:", longitude);
-          },
-          async (error) => {
-            console.error("Geo error:", error);
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
-      }
-    }
-
-    // 2. Parse device user agent detaiuls using parser
-    const parser = new UAParser();
-    const result = parser.getResult();
-
-    device = result.device;
-    os = result.os;
-    browser = result.browser;
-
-    console.log("Device:", device);
-    console.log("OS:", result);
-    console.log("Browser:", result);
-
-    // 3. save user's data in Firestore document with UID as ID
-    await setDoc(doc(db, "users", userCred.user.uid), {
-      name: name,
-      email: email,
-      createdAt: new Date(),
-      metadata: {
-        latitude: latitude,
-        longitude: longitude,
-        city: city,
-        ip: ip,
-        region: region,
-        countryName: countryName,
-        timezone: timezone,
-        device: {
-          model: result.device.model || null,
-          type: result.device.type || null,
-        },
-        os: {
-          name: result.os.name || null,
-          version: result.os.version || null,
-        },
-        browser: {
-          name: result.browser.name || null,
-          version: result.browser.version || null,
-        },
-      },
-    });
-
-    setSuccessOpen(true);
-  } catch (error) {
-    console.error("Auth error:", error.message);
-    setErrorMessage(error.message);
-    setErrorOpen(true);
-  } finally {
-    setLoading(false);
-  }
-}
-
 function Cover() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -163,13 +61,116 @@ function Cover() {
   const [errorOpen, setErrorOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const navigate = useNavigate(); //  Create navigate instance
+
+  const createUser = async () => {
+    setLoading(true);
+
+    try {
+      // Create user in Firebase Auth
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      console.log("Signed in:", userCred.user);
+
+      // Get devicde info : location, ip
+      var latitude, longitude, city, ip, region, countryName, timezone, device, os, browser;
+
+      try {
+        // Get location
+        const res = await fetch("https://ipapi.co/json");
+        const data = await res.json();
+        city = data.city;
+        ip = data.ip;
+        latitude = data.latitude;
+        longitude = data.longitude;
+        countryName = data.country_name;
+        timezone = data.timezone;
+        region = data.region;
+
+        console.log("City:", data.city);
+        console.log("Lat:", data.latitude);
+        console.log("Long:", data.longitude);
+      } catch (err) {
+        // if failed, eg due to nextwork timeout, then fallback to built-in geolocator
+        console.error("IP Fallback Error:", err);
+        if (navigator.geolocation) {
+          // try build-in geolocator
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              latitude = position.coords.latitude;
+              longitude = position.coords.longitude;
+              console.log("Lat:", latitude, "Lng:", longitude);
+            },
+            async (error) => {
+              console.error("Geo error:", error);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+        }
+      }
+
+      // 2. Parse device user agent detaiuls using parser
+      const parser = new UAParser();
+      const result = parser.getResult();
+
+      device = result.device;
+      os = result.os;
+      browser = result.browser;
+
+      console.log("Device:", device);
+      console.log("OS:", result);
+      console.log("Browser:", result);
+
+      // 3. save user's data in Firestore document with UID as ID
+      await setDoc(doc(db, "users", userCred.user.uid), {
+        name: name,
+        email: email,
+        createdAt: new Date(),
+        metadata: {
+          latitude: latitude,
+          longitude: longitude,
+          city: city,
+          ip: ip,
+          region: region,
+          countryName: countryName,
+          timezone: timezone,
+          device: {
+            model: result.device.model || null,
+            type: result.device.type || null,
+          },
+          os: {
+            name: result.os.name || null,
+            version: result.os.version || null,
+          },
+          browser: {
+            name: result.browser.name || null,
+            version: result.browser.version || null,
+          },
+        },
+      });
+
+      setSuccessOpen(true);
+    } catch (error) {
+      console.error("Auth error:", error.message);
+      setErrorMessage(error.message);
+      setErrorOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <CoverLayout image={bgImage}>
       <Dialog open={successOpen} onClose={() => setSuccessOpen(false)}>
         <DialogTitle>Success</DialogTitle>
         <DialogContent>Account created successfully!</DialogContent>
         <DialogActions>
-          <Button onClick={() => setSuccessOpen(false)} autoFocus>
+          <Button
+            onClick={() => {
+              setSuccessOpen(false);
+              navigate("/dashboard");
+            }}
+            autoFocus
+          >
             OK
           </Button>
         </DialogActions>
@@ -210,15 +211,7 @@ function Cover() {
             role="form"
             onSubmit={(e) => {
               e.preventDefault(); // stop page reload
-              createUser(
-                name,
-                email,
-                password,
-                setLoading,
-                setSuccessOpen,
-                setErrorOpen,
-                setErrorMessage
-              );
+              createUser();
             }}
           >
             <MDBox mb={2}>

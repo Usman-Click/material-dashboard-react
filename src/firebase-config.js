@@ -11,16 +11,16 @@ const firebaseConfig = {
   projectId: "intrusion-detector-3dd54",
   storageBucket: "intrusion-detector-3dd54.firebasestorage.app",
   messagingSenderId: "948307940974",
-  appId: "1:948307940974:web:0e0bab861bebb9e79db87f"
+  appId: "1:948307940974:web:0e0bab861bebb9e79db87f",
 };
 
 // Initialize the Firebase app instance
 const firebaseApp = initializeApp(firebaseConfig);
 
 // Initialize Firebase services using the app instance
-const auth = getAuth(firebaseApp);         // Authentication
-const db = getFirestore(firebaseApp);      // Firestore database
+const auth = getAuth(firebaseApp); // Authentication
+const db = getFirestore(firebaseApp); // Firestore database
 
 // Export the initialized services for use in other parts of your app
-// - These are exported so you can use them like: import { auth, db } from './firebase.js';
+// - These are exported so you can use them like: import { auth, db } from './firebase-config.js';
 export { firebaseApp, auth, db };
