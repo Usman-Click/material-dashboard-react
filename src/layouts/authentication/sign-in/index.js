@@ -1,22 +1,6 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
 import { useState } from "react";
-
-// react-router-dom components
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // ✅ useNavigate for redirection
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 // @mui material components
 import Card from "@mui/material/Card";
@@ -41,10 +25,94 @@ import BasicLayout from "layouts/authentication/components/BasicLayout";
 // Images
 import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 
+// firebase
+import { auth } from "firebase-config";
+
+// get device user agent info
+import { UAParser } from "ua-parser-js";
+
 function Basic() {
   const [rememberMe, setRememberMe] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleSetRememberMe = () => setRememberMe(!rememberMe);
+
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    try {
+      // Sign user in
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Signed in user:", userCred.user);
+
+      // Get devicde info : location, ip
+      var latitude, longitude, city, ip, region, countryName, timezone, device, os, browser;
+
+      try {
+        // Get location
+        const res = await fetch("https://ipapi.co/json");
+        const data = await res.json();
+        city = data.city;
+        ip = data.ip;
+        latitude = data.latitude;
+        longitude = data.longitude;
+        countryName = data.country_name;
+        timezone = data.timezone;
+        region = data.region;
+
+        console.log("City:", data.city);
+        console.log("Lat:", data.latitude);
+        console.log("Long:", data.longitude);
+      } catch (err) {
+        // if failed, eg due to nextwork timeout, then fallback to built-in geolocator
+        console.error("IP Fallback Error:", err);
+        if (navigator.geolocation) {
+          // try build-in geolocator
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              latitude = position.coords.latitude;
+              longitude = position.coords.longitude;
+              console.log("Lat:", latitude, "Lng:", longitude);
+            },
+            async (error) => {
+              console.error("Geo error:", error);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+        }
+      }
+
+      // 2. Parse device user agent detaiuls using parser
+      const parser = new UAParser();
+      const result = parser.getResult();
+
+      device = result.device;
+      os = result.os;
+      browser = result.browser;
+
+      console.log("Device:", device);
+      console.log("OS:", result);
+      console.log("Browser:", result);
+
+      // Save user data in session storage
+      sessionStorage.setItem(
+        "user",
+        JSON.stringify({
+          uid: userCred.user.uid,
+          name: "name",
+          email: email,
+          city: city,
+          region: countryName,
+        })
+      );
+
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Login failed:", err.message);
+      alert(err.message);
+    }
+  };
 
   return (
     <BasicLayout image={bgImage}>
@@ -82,12 +150,26 @@ function Basic() {
           </Grid>
         </MDBox>
         <MDBox pt={4} pb={3} px={3}>
-          <MDBox component="form" role="form">
+          <MDBox component="form" role="form" onSubmit={handleSignIn}>
             <MDBox mb={2}>
-              <MDInput type="email" label="Email" fullWidth />
+              <MDInput
+                reuired
+                type="email"
+                label="Email"
+                fullWidth
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </MDBox>
             <MDBox mb={2}>
-              <MDInput type="password" label="Password" fullWidth />
+              <MDInput
+                required
+                type="password"
+                label="Password"
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </MDBox>
             <MDBox display="flex" alignItems="center" ml={-1}>
               <Switch checked={rememberMe} onChange={handleSetRememberMe} />
@@ -102,8 +184,8 @@ function Basic() {
               </MDTypography>
             </MDBox>
             <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth>
-                sign in
+              <MDButton type="submit" variant="gradient" color="info" fullWidth>
+                Sign in
               </MDButton>
             </MDBox>
             <MDBox mt={3} mb={1} textAlign="center">
