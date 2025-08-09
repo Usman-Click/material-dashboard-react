@@ -122,6 +122,7 @@ function Cover() {
 
       // 3. save user's data in Firestore document with UID as ID
       await setDoc(doc(db, "users", userCred.user.uid), {
+        uid: userCred.user.uid,
         name: name,
         email: email,
         createdAt: new Date(),
@@ -150,6 +151,7 @@ function Cover() {
 
       // Save user data in session storage
       sessionStorage.setItem("user", JSON.stringify({
+        uid:userCred.user.uid,
         name: name,
         email: email,
         city: city,
