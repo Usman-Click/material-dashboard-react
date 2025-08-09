@@ -80,15 +80,19 @@ function Dashboard() {
       const user = JSON.parse(sessionStorage.getItem("user"));
       if (user != null) {
         const currentCity = user.city;
-        var storedCity;
+        const currentDevice = user.device.model;
+        const currentOS = user.os.name;
+        var prevCity, prevDevice, prevOS;
 
         // stored user's data
         const userData = await getUserData(user.uid);
         if (userData) {
-           storedCity = userData.metadata.city;
+          prevCity = userData.metadata.city;
+          prevDevice = userData.metadata.device.model;
+          prevOS = userData.metadata.os.name;
         }
 
-        if (storedCity != currentCity) {
+        if (prevCity != currentCity || prevDevice != currentDevice || prevOS != currentOS) {
           setOpenDialog(true);
         }
       }

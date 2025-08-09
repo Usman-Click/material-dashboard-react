@@ -150,13 +150,24 @@ function Cover() {
       });
 
       // Save user data in session storage
-      sessionStorage.setItem("user", JSON.stringify({
-        uid:userCred.user.uid,
-        name: name,
-        email: email,
-        city: city,
-        region: countryName
-      }))
+      sessionStorage.setItem(
+        "user",
+        JSON.stringify({
+          uid: userCred.user.uid,
+          name: name,
+          email: email,
+          city: city,
+          region: countryName,
+          device: {
+            model: result.device.model || null,
+            type: result.device.type || null,
+          },
+          os: {
+            name: result.os.name || null,
+            version: result.os.version || null,
+          },
+        })
+      );
 
       setSuccessOpen(true);
     } catch (error) {

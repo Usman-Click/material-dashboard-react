@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // ✅ useNavigate for redirection
+import { Link, useNavigate } from "react-router-dom"; // useNavigate for redirection
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 // @mui material components
+import CircularProgress from "@mui/material/CircularProgress";
 import Card from "@mui/material/Card";
 import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
@@ -35,12 +36,16 @@ function Basic() {
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   const handleSetRememberMe = () => setRememberMe(!rememberMe);
 
   const handleSignIn = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
       // Sign user in
       const userCred = await signInWithEmailAndPassword(auth, email, password);
@@ -104,12 +109,21 @@ function Basic() {
           email: email,
           city: city,
           region: countryName,
+          device: {
+            model: result.device.model || null,
+            type: result.device.type || null,
+          },
+          os: {
+            name: result.os.name || null,
+            version: result.os.version || null,
+          },
         })
       );
-
+      setLoading(false);
       navigate("/dashboard");
     } catch (err) {
       console.error("Login failed:", err.message);
+      setLoading(false);
       alert(err.message);
     }
   };
@@ -184,8 +198,8 @@ function Basic() {
               </MDTypography>
             </MDBox>
             <MDBox mt={4} mb={1}>
-              <MDButton type="submit" variant="gradient" color="info" fullWidth>
-                Sign in
+              <MDButton type="submit" variant="gradient" color="info" disabled={loading} fullWidth>
+                {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
               </MDButton>
             </MDBox>
             <MDBox mt={3} mb={1} textAlign="center">
