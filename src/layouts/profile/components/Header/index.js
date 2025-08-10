@@ -63,9 +63,8 @@ function Header({ children }) {
   }, [tabsOrientation]);
 
   const handleSetTabValue = (event, newValue) => setTabValue(newValue);
-  
+
   const user = JSON.parse(sessionStorage.getItem("user"));
-  
 
   return (
     <MDBox position="relative" mb={5}>

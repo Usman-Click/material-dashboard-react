@@ -108,7 +108,7 @@ function Dashboard() {
     <DashboardLayout>
       {/* Suspicious Activity Dialog */}
       <Dialog
-                disableEscapeKeyDown
+        disableEscapeKeyDown
         open={openDialog}
         onClose={(event, reason) => {
           // Prevent closing when clicking backdrop or pressing ESC
@@ -116,7 +116,6 @@ function Dashboard() {
             setOpenDialog(false);
             setVerificationSent(false);
           }
-
         }}
       >
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
