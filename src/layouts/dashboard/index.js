@@ -69,6 +69,9 @@ async function getUserData(uid) {
 function Dashboard() {
   const { sales, tasks } = reportsLineChartData;
   const [openDialog, setOpenDialog] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeVerified, setCodeVerified] = useState(false);
 
   useEffect(() => {
     // Do your initialization logic here
@@ -104,38 +107,95 @@ function Dashboard() {
   return (
     <DashboardLayout>
       {/* Suspicious Activity Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+      <Dialog
+                disableEscapeKeyDown
+        open={openDialog}
+        onClose={(event, reason) => {
+          // Prevent closing when clicking backdrop or pressing ESC
+          if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
+            setOpenDialog(false);
+            setVerificationSent(false);
+          }
+
+        }}
+      >
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <WarningAmberIcon sx={{ color: red[500], fontSize: 30 }} />
           Security Alert
         </DialogTitle>
 
         <DialogContent dividers>
-          <p>
-            We’ve detected unusual activity on your account. Please verify your account to continue
-            using our services securely.
-          </p>
-          <p style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10 }}>
-            <EmailIcon color="primary" />
-            Check your email for the verification link.
-          </p>
+          {!verificationSent ? (
+            <>
+              <p>
+                We’ve detected unusual activity on your account. Please verify your account to
+                continue using our services securely.
+              </p>
+              <p style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10 }}>
+                <EmailIcon color="primary" />
+                Check your email for the verification link.
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ color: "green", fontWeight: "bold", marginTop: 10 }}>
+                A verification code has been sent to your email address.
+              </p>
+              <div style={{ marginTop: 20 }}>
+                <label htmlFor="verification-code" style={{ fontWeight: "bold" }}>
+                  Enter Code:
+                </label>
+                <input
+                  id="verification-code"
+                  type="text"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  style={{ marginLeft: 10, padding: 5, borderRadius: 4, border: "1px solid #ccc" }}
+                  placeholder="Verification code"
+                />
+                {codeVerified && (
+                  <span style={{ color: "green", marginLeft: 10 }}>Code verified!</span>
+                )}
+              </div>
+            </>
+          )}
         </DialogContent>
 
         <DialogActions>
-          <Button
-            variant="contained"
-            color="error"
+          {!verificationSent ? (
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => {
+                setVerificationSent(true);
+              }}
+            >
+              Verify Now
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              color="primary"
+              disabled={code.length === 0 || codeVerified}
+              onClick={() => {
+                // Simulate code verification
+                setCodeVerified(true);
+              }}
+            >
+              Verify
+            </Button>
+          )}
+          {/* <Button
             onClick={() => {
               setOpenDialog(false);
-              //  navigate("/account-verification");
-              // navigate("/dashboard");
+              setVerificationSent(false);
+              setCode("");
+              setCodeVerified(false);
             }}
+            color="secondary"
           >
-            Verify Now
-          </Button>
-          <Button onClick={() => setOpenDialog(false)} color="secondary">
             Dismiss
-          </Button>
+          </Button> */}
         </DialogActions>
       </Dialog>
 
