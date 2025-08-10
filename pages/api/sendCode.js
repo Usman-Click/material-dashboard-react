@@ -15,6 +15,7 @@ if (!admin.apps.length) {
 export default async function handler(req, res) {
   if (req.method === "POST") {
     const data = req.body;
+    
 
     console.log("Webhook received, Data:", data);
 
