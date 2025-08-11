@@ -180,6 +180,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
           (darkMode && !transparentSidenav && whiteSidenav)
         }
       />
+      {/* Routes */}
       <List>{renderRoutes}</List>
       <MDBox p={2} mt="auto">
         <MDButton
