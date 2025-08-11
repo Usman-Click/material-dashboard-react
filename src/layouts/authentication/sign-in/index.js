@@ -28,9 +28,11 @@ import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 
 // firebase
 import { auth } from "firebase-config";
+import { getDoc, doc } from "firebase/firestore";
 
 // get device user agent info
 import { UAParser } from "ua-parser-js";
+import { db } from "firebase-config";
 
 function Basic() {
   const [rememberMe, setRememberMe] = useState(false);
@@ -100,12 +102,15 @@ function Basic() {
       console.log("OS:", result);
       console.log("Browser:", result);
 
+      // Get users name from firestore
+      const snapshot = await getDoc(doc(db, "users", userCred.user.uid));
+
       // Save user data in session storage
       sessionStorage.setItem(
         "user",
         JSON.stringify({
           uid: userCred.user.uid,
-          name: "name",
+          name: snapshot.data().name,
           email: email,
           city: city,
           region: countryName,
