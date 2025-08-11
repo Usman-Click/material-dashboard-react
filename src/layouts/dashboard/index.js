@@ -109,20 +109,73 @@ function Dashboard() {
 
     const analyzeData = async () => {
       if (user != null) {
-        const currentCity = user.city;
-        const currentDevice = user.device.model;
-        const currentOS = user.os.name;
-        var prevCity, prevDevice, prevOS;
+        // Get devicde info : location, ip
+        var latitude, longitude, city, ip, region, countryName, timezone, device, os, browser;
+        try {
+          // Get location
+          const res = await fetch("https://ipapi.co/json");
+          const data = await res.json();
+          city = data.city;
+          ip = data.ip;
+          latitude = data.latitude;
+          longitude = data.longitude;
+          countryName = data.country_name;
+          timezone = data.timezone;
+          region = data.region;
+        } catch (err) {
+          // if failed, eg due to nextwork timeout, then fallback to built-in geolocator
+          console.error("IP Fallback Error:", err);
+          if (navigator.geolocation) {
+            // try build-in geolocator
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                latitude = position.coords.latitude;
+                longitude = position.coords.longitude;
+              },
+              async (error) => console.error("Geo error:", error),
+              { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+          }
+        }
+        
+        // 2. Parse device user agent detaiuls using parser
+        const parser = new UAParser();
+        const result = parser.getResult();
+        device = result.device;
+        os = result.os;
+        browser = result.browser;
 
-        // stored user's data from firestore
+        // Save user data in session storage
+        sessionStorage.setItem(
+          "user",
+          JSON.stringify({
+            uid: user.uid,
+            name: user.name,
+            email: user.email,
+            city: city,
+            region: countryName,
+            device: {
+              model: result.device.model || null,
+              type: result.device.type || null,
+            },
+            os: {
+              name: result.os.name || null,
+              version: result.os.version || null,
+            },
+          })
+        );
+
+        // Get stored user's data from firestore
+        var prevCity, prevDevice, prevOS;
         const userData = await getUserData(user.uid);
         if (userData) {
-          prevCity = userData.metadata.city;
-          prevDevice = userData.metadata.device.model;
-          prevOS = userData.metadata.os.name;
+          prevCity = city;
+          prevDevice = device.model;
+          prevOS = os.name;
         }
 
-        if (prevCity != currentCity || prevDevice != currentDevice || prevOS != currentOS) {
+        // Analyze the data
+        if (prevCity != city || prevDevice != device || prevOS != os) {
           setOpenDialog(true);
         }
       }

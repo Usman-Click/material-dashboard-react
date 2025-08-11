@@ -53,55 +53,6 @@ function Basic() {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
       console.log("Signed in user:", userCred.user);
 
-      // Get devicde info : location, ip
-      var latitude, longitude, city, ip, region, countryName, timezone, device, os, browser;
-
-      try {
-        // Get location
-        const res = await fetch("https://ipapi.co/json");
-        const data = await res.json();
-        city = data.city;
-        ip = data.ip;
-        latitude = data.latitude;
-        longitude = data.longitude;
-        countryName = data.country_name;
-        timezone = data.timezone;
-        region = data.region;
-
-        console.log("City:", data.city);
-        console.log("Lat:", data.latitude);
-        console.log("Long:", data.longitude);
-      } catch (err) {
-        // if failed, eg due to nextwork timeout, then fallback to built-in geolocator
-        console.error("IP Fallback Error:", err);
-        if (navigator.geolocation) {
-          // try build-in geolocator
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              latitude = position.coords.latitude;
-              longitude = position.coords.longitude;
-              console.log("Lat:", latitude, "Lng:", longitude);
-            },
-            async (error) => {
-              console.error("Geo error:", error);
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-          );
-        }
-      }
-
-      // 2. Parse device user agent detaiuls using parser
-      const parser = new UAParser();
-      const result = parser.getResult();
-
-      device = result.device;
-      os = result.os;
-      browser = result.browser;
-
-      console.log("Device:", device);
-      console.log("OS:", result);
-      console.log("Browser:", result);
-
       // Get users name from firestore
       const snapshot = await getDoc(doc(db, "users", userCred.user.uid));
 
@@ -112,18 +63,10 @@ function Basic() {
           uid: userCred.user.uid,
           name: snapshot.data().name,
           email: email,
-          city: city,
-          region: countryName,
-          device: {
-            model: result.device.model || null,
-            type: result.device.type || null,
-          },
-          os: {
-            name: result.os.name || null,
-            version: result.os.version || null,
-          },
         })
       );
+
+      // Navigate
       setLoading(false);
       navigate("/dashboard");
     } catch (err) {
