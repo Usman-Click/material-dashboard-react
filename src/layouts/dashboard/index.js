@@ -45,8 +45,9 @@ import { red } from "@mui/material/colors";
 
 // firebase
 import { firebaseApp, db } from "firebase-config";
-import { getDoc, doc } from "firebase/firestore";
+import { getDoc, doc, setDoc } from "firebase/firestore";
 import { json } from "react-router-dom";
+import { Try } from "@mui/icons-material";
 
 async function getUserData(uid) {
   try {
@@ -66,28 +67,54 @@ async function getUserData(uid) {
   }
 }
 
+async function verifyUser(user) {
+  try {
+    const req = await fetch("https://ids-hook.vercel.app/api/send-code", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user: {
+          uid: user.uid,
+          email: user.email,
+        },
+      }),
+    });
+
+    if (!req.ok) {
+      const error = await req.text();
+      console.log("Code Failed" + error);
+    } else {
+      const res = await req.text();
+      console.log("Code Sent Sucessfully to " + user.email + res);
+    }
+  } catch (error) {
+    console.log("Code Failed" + error);
+  }
+}
 function Dashboard() {
   const { sales, tasks } = reportsLineChartData;
   const [openDialog, setOpenDialog] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [code, setCode] = useState("");
   const [codeVerified, setCodeVerified] = useState(false);
+  // get current user's data from storageSessiion
+  const user = JSON.parse(sessionStorage.getItem("user"));
 
   useEffect(() => {
     // Do your initialization logic here
     // e.g., fetch data, load from localStorage, set up subscriptions
     // This runs once when the component mounts (like initState/onCreate)
 
-    const fetchData = async () => {
-      // get current user's data
-      const user = JSON.parse(sessionStorage.getItem("user"));
+    const analyzeData = async () => {
       if (user != null) {
         const currentCity = user.city;
         const currentDevice = user.device.model;
         const currentOS = user.os.name;
         var prevCity, prevDevice, prevOS;
 
-        // stored user's data
+        // stored user's data from firestore
         const userData = await getUserData(user.uid);
         if (userData) {
           prevCity = userData.metadata.city;
@@ -101,7 +128,7 @@ function Dashboard() {
       }
     };
 
-    fetchData();
+    analyzeData();
   }, []);
 
   return (
@@ -165,8 +192,15 @@ function Dashboard() {
             <Button
               variant="contained"
               color="error"
-              onClick={() => {
-                setVerificationSent(true);
+              onClick={async () => {
+                // Simulate code verification
+                try {
+                  await verifyUser(user);
+                  setVerificationSent(true);
+                } catch (error) {
+                  // todo
+                  console.log(error);
+                }
               }}
             >
               Verify Now
@@ -176,9 +210,39 @@ function Dashboard() {
               variant="contained"
               color="primary"
               disabled={code.length === 0 || codeVerified}
-              onClick={() => {
+              onClick={async () => {
                 // Simulate code verification
-                setCodeVerified(true);
+                try {
+                  // Get firestore verification code
+                  const snapshot = await getDoc(doc(db, "users", user.uid));
+                  if (code == snapshot.data().verificationCode) {
+                    // Update user data in firestore
+                    await setDoc(
+                      doc(db, "users", user.uid),
+                      {
+                        metadata: {
+                          city: user.city,
+                          device: {
+                            model: user.device.model,
+                          },
+                          os: {
+                            name: user.os.name,
+                          },
+                        },
+                      },
+                      { merge: true }
+                    );
+
+                    console.log("Code is Verified");
+                    setCodeVerified(true);
+                    setOpenDialog(false);
+                  } else {
+                    console.log("Code is did not match");
+                  }
+                } catch (error) {
+                  // todo
+                  console.log(error);
+                }
               }}
             >
               Verify
