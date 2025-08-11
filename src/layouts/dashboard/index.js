@@ -48,6 +48,7 @@ import { firebaseApp, db } from "firebase-config";
 import { getDoc, doc, setDoc } from "firebase/firestore";
 import { json } from "react-router-dom";
 import { Try } from "@mui/icons-material";
+import { UAParser } from "ua-parser-js";
 
 async function getUserData(uid) {
   try {
@@ -137,7 +138,7 @@ function Dashboard() {
             );
           }
         }
-        
+
         // 2. Parse device user agent detaiuls using parser
         const parser = new UAParser();
         const result = parser.getResult();
