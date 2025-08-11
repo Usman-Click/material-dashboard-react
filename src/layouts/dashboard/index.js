@@ -157,11 +157,9 @@ function Dashboard() {
             region: countryName,
             device: {
               model: result.device.model || null,
-              type: result.device.type || null,
             },
             os: {
               name: result.os.name || null,
-              version: result.os.version || null,
             },
           })
         );
@@ -170,13 +168,13 @@ function Dashboard() {
         var prevCity, prevDevice, prevOS;
         const userData = await getUserData(user.uid);
         if (userData) {
-          prevCity = city;
-          prevDevice = device.model;
-          prevOS = os.name;
+          prevCity = userData.metadata.city;
+          prevDevice = userData.metadata.device.model;
+          prevOS = userData.metadata.os.name;
         }
 
         // Analyze the data
-        if (prevCity != city || prevDevice != device || prevOS != os) {
+        if (prevCity != city || prevDevice != device.model || prevOS != os.name) {
           setOpenDialog(true);
         }
       }
