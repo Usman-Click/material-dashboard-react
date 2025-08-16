@@ -32,12 +32,18 @@ import reportsBarChartData from "layouts/dashboard/data/reportsBarChartData";
 import reportsLineChartData from "layouts/dashboard/data/reportsLineChartData";
 import { useEffect, useState } from "react";
 
-import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  Box,
+  Stack,
+  TextField,
+  Slide,
+} from "@mui/material";
 
 import WarningAmberIcon from "@mui/icons-material/WarningAmber"; // warning icon
 import EmailIcon from "@mui/icons-material/Email"; // mail icon
@@ -49,6 +55,12 @@ import { getDoc, doc, setDoc } from "firebase/firestore";
 import { json } from "react-router-dom";
 import { Try } from "@mui/icons-material";
 import { UAParser } from "ua-parser-js";
+
+import { forwardRef } from "react";
+
+const Transition = forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 async function getUserData(uid) {
   try {
@@ -187,72 +199,126 @@ function Dashboard() {
     <DashboardLayout>
       {/* Suspicious Activity Dialog */}
       <Dialog
+        TransitionComponent={Transition}
         disableEscapeKeyDown
         open={openDialog}
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            p: 1.5,
+            width: 620,
+            backdropFilter: "blur(16px) saturate(180%)",
+            background: "rgba(255, 255, 255, 0.8)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+          },
+        }}
         onClose={(event, reason) => {
-          // Prevent closing when clicking backdrop or pressing ESC
           if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
             setOpenDialog(false);
             setVerificationSent(false);
           }
         }}
       >
+        {/* Header */}
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <WarningAmberIcon sx={{ color: red[500], fontSize: 30 }} />
-          Security Alert
+          <Box
+            sx={{
+              p: 1,
+              borderRadius: "50%",
+              bgcolor: "rgba(255,0,0,0.08)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <WarningAmberIcon sx={{ color: red[500], fontSize: 26 }} />
+          </Box>
+          <Typography variant="h6" fontWeight={700} sx={{ color: "#222" }}>
+            Security Alert
+          </Typography>
         </DialogTitle>
 
-        <DialogContent dividers>
+        {/* Content */}
+        <DialogContent dividers sx={{ border: "none" }}>
           {!verificationSent ? (
-            <>
-              <p>
+            <Stack spacing={2}>
+              <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
                 We’ve detected unusual activity on your account. Please verify your account to
                 continue using our services securely.
-              </p>
-              <p style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10 }}>
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  p: 1.2,
+                  borderRadius: 2,
+                  bgcolor: "rgba(33,150,243,0.06)",
+                }}
+              >
                 <EmailIcon color="primary" />
-                Check your email for the verification link.
-              </p>
-            </>
+                <Typography variant="body2" fontWeight={500}>
+                  Check your email for the verification code.
+                </Typography>
+              </Box>
+            </Stack>
           ) : (
-            <>
-              <p style={{ color: "green", fontWeight: "bold", marginTop: 10 }}>
-                A verification code has been sent to your email address.
-              </p>
-              <div style={{ marginTop: 20 }}>
-                <label htmlFor="verification-code" style={{ fontWeight: "bold" }}>
-                  Enter Code:
-                </label>
-                <input
-                  id="verification-code"
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  style={{ marginLeft: 10, padding: 5, borderRadius: 4, border: "1px solid #ccc" }}
-                  placeholder="Verification code"
-                />
-                {codeVerified && (
-                  <span style={{ color: "green", marginLeft: 10 }}>Code verified!</span>
-                )}
-              </div>
-            </>
+            <Stack spacing={2}>
+              <Typography>A verification code has been sent to your email address.</Typography>
+
+              <TextField
+                id="verification-code"
+                label="Verification Code"
+                size="medium"
+                fullWidth
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    backdropFilter: "blur(8px)",
+                    background: "rgba(255,255,255,0.7)",
+                  },
+                }}
+              />
+              {codeVerified && (
+                <Typography variant="caption" color="success.main">
+                  ✅ Code verified!
+                </Typography>
+              )}
+              {!codeVerified && (
+                <Typography variant="caption" color="#FF0000">
+                  Code did not match!, pls check your email
+                </Typography>
+              )}
+            </Stack>
           )}
         </DialogContent>
 
-        <DialogActions>
+        {/* Actions */}
+        <DialogActions sx={{ px: 3, py: 2, flexDirection: "column", gap: 1 }}>
           {!verificationSent ? (
             <Button
               variant="contained"
               color="error"
+              fullWidth
               onClick={async () => {
-                // Simulate code verification
                 try {
                   await verifyUser(user);
                   setVerificationSent(true);
                 } catch (error) {
-                  // todo
-                  console.log(error);
+                  console.error(error);
                 }
+              }}
+              sx={{
+                borderRadius: 3,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "1rem",
+                py: 1.2,
+                boxShadow: "0 4px 14px rgba(255,0,0,0.2)",
+                "&:hover": { boxShadow: "0 6px 18px rgba(255,0,0,0.3)" },
               }}
             >
               Verify Now
@@ -261,56 +327,47 @@ function Dashboard() {
             <Button
               variant="contained"
               color="primary"
+              fullWidth
               disabled={code.length === 0 || codeVerified}
               onClick={async () => {
-                // Simulate code verification
                 try {
-                  // Get firestore verification code
                   const snapshot = await getDoc(doc(db, "users", user.uid));
-                  if (code == snapshot.data().verificationCode) {
-                    // Update user data in firestore
+                  if (code === snapshot.data().verificationCode) {
                     await setDoc(
                       doc(db, "users", user.uid),
                       {
                         metadata: {
                           city: user.city,
-                          device: {
-                            model: user.device.model,
-                          },
-                          os: {
-                            name: user.os.name,
-                          },
+                          device: { model: user.device.model },
+                          os: { name: user.os.name },
                         },
                       },
                       { merge: true }
                     );
-
-                    console.log("Code is Verified");
                     setCodeVerified(true);
                     setOpenDialog(false);
                   } else {
-                    console.log("Code is did not match");
+                    console.log("Code did not match");
                   }
                 } catch (error) {
-                  // todo
-                  console.log(error);
+                  setCodeVerified(false);
+                  console.error(error);
                 }
+              }}
+              sx={{
+                borderRadius: 3,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "1rem",
+                color: "#fff",
+                py: 1.2,
+                boxShadow: "0 4px 14px rgba(33,150,243,0.2)",
+                "&:hover": { boxShadow: "0 6px 18px rgba(33,150,243,0.3)" },
               }}
             >
               Verify
             </Button>
           )}
-          {/* <Button
-            onClick={() => {
-              setOpenDialog(false);
-              setVerificationSent(false);
-              setCode("");
-              setCodeVerified(false);
-            }}
-            color="secondary"
-          >
-            Dismiss
-          </Button> */}
         </DialogActions>
       </Dialog>
 
