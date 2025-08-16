@@ -57,6 +57,7 @@ import { Try } from "@mui/icons-material";
 import { UAParser } from "ua-parser-js";
 
 import { forwardRef } from "react";
+import { CircularProgress } from "@mui/material";
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -112,6 +113,8 @@ function Dashboard() {
   const [verificationSent, setVerificationSent] = useState(false);
   const [code, setCode] = useState("");
   const [codeVerified, setCodeVerified] = useState(false);
+  const [loadingVerifyNow, setLoadingVerifyNow] = useState(false);
+  const [loadingCodeVerify, setLoadingCodeVerify] = useState(false);
   // get current user's data from storageSessiion
   const user = JSON.parse(sessionStorage.getItem("user"));
 
@@ -297,18 +300,23 @@ function Dashboard() {
         </DialogContent>
 
         {/* Actions */}
+        {/* Actions */}
         <DialogActions sx={{ px: 3, py: 2, flexDirection: "column", gap: 1 }}>
           {!verificationSent ? (
             <Button
               variant="contained"
               color="error"
               fullWidth
+              disabled={loadingVerifyNow}
               onClick={async () => {
+                setLoadingVerifyNow(true);
                 try {
                   await verifyUser(user);
                   setVerificationSent(true);
                 } catch (error) {
                   console.error(error);
+                } finally {
+                  setLoadingVerifyNow(false);
                 }
               }}
               sx={{
@@ -321,15 +329,20 @@ function Dashboard() {
                 "&:hover": { boxShadow: "0 6px 18px rgba(255,0,0,0.3)" },
               }}
             >
-              Verify Now
+              {loadingVerifyNow ? (
+                <CircularProgress size={24} sx={{ color: "white" }} />
+              ) : (
+                "Verify Now"
+              )}
             </Button>
           ) : (
             <Button
               variant="contained"
               color="primary"
               fullWidth
-              disabled={code.length === 0 || codeVerified}
+              disabled={code.length === 0 || codeVerified || loadingCodeVerify}
               onClick={async () => {
+                setLoadingCodeVerify(true);
                 try {
                   const snapshot = await getDoc(doc(db, "users", user.uid));
                   if (code === snapshot.data().verificationCode) {
@@ -352,6 +365,8 @@ function Dashboard() {
                 } catch (error) {
                   setCodeVerified(false);
                   console.error(error);
+                } finally {
+                  setLoadingCodeVerify(false);
                 }
               }}
               sx={{
@@ -365,7 +380,11 @@ function Dashboard() {
                 "&:hover": { boxShadow: "0 6px 18px rgba(33,150,243,0.3)" },
               }}
             >
-              Verify
+              {loadingCodeVerify ? (
+                <CircularProgress size={24} sx={{ color: "white" }} />
+              ) : (
+                "Verify"
+              )}
             </Button>
           )}
         </DialogActions>
