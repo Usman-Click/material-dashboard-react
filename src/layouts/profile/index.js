@@ -66,13 +66,13 @@ function Overview() {
               <ProfileInfoCard
                 title="profile information"
                 description={
-                  "Hi, I’m" +
+                  "Hi, I’m " +
                   (user != null ? user.name : "Abubakar Muh'd") +
                   ", Decisions: If you can’t decide, the answer is no. If two equally difficult paths, choose the one more painful in the short term (pain avoidance is creating an illusion of equality)."
                 }
                 info={{
                   fullName: user != null ? user.name : "Abubakar Muh'd",
-                  mobile: "(234) 902 1234 123",
+                  mobile: "(+234) 706 685 2100",
                   email: user != null ? user.email : "Abubakar Muh'd",
                   location: user != null ? user.region : "Nigeria",
                 }}
