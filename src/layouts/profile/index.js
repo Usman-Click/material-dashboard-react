@@ -73,7 +73,7 @@ function Overview() {
                 info={{
                   fullName: user != null ? user.name : "Abubakar Muh'd",
                   mobile: "(+234) 706 685 2100",
-                  email: user != null ? user.email : "Abubakar Muh'd",
+                  email: user != null ? user.email : "abubakarmuhd01@gmail.com",
                   location: user != null ? user.region : "Nigeria",
                 }}
                 social={[
